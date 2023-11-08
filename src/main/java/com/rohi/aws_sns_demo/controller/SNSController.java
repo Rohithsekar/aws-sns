@@ -19,20 +19,13 @@ import java.util.Map;
 @Slf4j
 public class SNSController {
 
-
     @Value("${aws.sns.sms.type.value}")
     private String AWS_SNS_SMS_TYPE_VALUE;
-
     @Value("${aws.sns.sms.data.type}")
     private String dataType;
     @Autowired
     private SnsClient snsClient;
 
-    @Value("${aws.sns.arn}")
-    private String arn;
-
-
-    private static volatile String subscriptionArn;
 
     /**
      * A noticable change from the SDK for Java 1.x to the SDK for Java 2.x is the package name change.
@@ -79,30 +72,7 @@ public class SNSController {
 
         return "Subscription request is pending. To confirm the subscription, check your mail: " + email;
     }
-/*
-   private static final Logger LOG = Logger.getLogger(SnsSubscriptionManager.class);
 
-    private static volatile String subscriptionArn;
-
-    public static void subscribe(SnsClient sns, String topicArn, String notificationEndpoint) {
-        if(subscriptionArn != null) {
-            LOG.infov("Already Subscribed <{0}> ", notificationEndpoint);
-            return;
-        }
-        SubscribeResponse response = sns.subscribe(s -> s.topicArn(topicArn).protocol("https").endpoint(notificationEndpoint).returnSubscriptionArn(true));
-        subscriptionArn = response.subscriptionArn();
-        LOG.infov("Subscribed <{0}> : {1} ", notificationEndpoint, response.subscriptionArn());
-    }
-
-
-    public static void setSubscriptionArn(String subscriptionTopicArn) {
-        subscriptionArn = subscriptionTopicArn;
-    }
-
-    public static String getSubscriptionArn() {
-        return subscriptionArn;
-    }
- */
     @PostMapping("/subscribeMobile")
     public String subscribeMobile(@RequestParam String mobileNumber, @RequestParam String topicArn) {
 
@@ -135,16 +105,16 @@ public class SNSController {
     }
 
 
-
-
     @PostMapping("/publish/mobile")
     public String publishSMSMessageToMobile(@RequestParam(value = "topicArn") String  topicArn,
                                             @RequestParam(value = "message") String message,
                                             @RequestParam(value = "mobile") String mobile) {
         try {
+
+            // provide either arn or phone number but never both.
             PublishRequest request = PublishRequest.builder().message(message)
                     .phoneNumber(mobile)
-//                    .topicArn(topicArn)
+//                    .topicArn(topicArn)  this line causes exception
                     .messageAttributes(buildSMSAttributes("Transactional"))
                     .build();
 
