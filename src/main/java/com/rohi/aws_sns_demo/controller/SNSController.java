@@ -1,18 +1,22 @@
 package com.rohi.aws_sns_demo.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.*;
 
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 @RestController
 @RequestMapping("/sns")
+@Slf4j
 public class SNSController {
 
 
@@ -26,6 +30,9 @@ public class SNSController {
 
     @Value("${aws.sns.arn}")
     private String arn;
+
+
+    private static volatile String subscriptionArn;
 
     /**
      * A noticable change from the SDK for Java 1.x to the SDK for Java 2.x is the package name change.
@@ -68,53 +75,52 @@ public class SNSController {
 
         snsClient.subscribe(request);
 
+        log.info("Already Subscribed <{0}> ", email);
+
         return "Subscription request is pending. To confirm the subscription, check your mail: " + email;
     }
+/*
+   private static final Logger LOG = Logger.getLogger(SnsSubscriptionManager.class);
 
+    private static volatile String subscriptionArn;
+
+    public static void subscribe(SnsClient sns, String topicArn, String notificationEndpoint) {
+        if(subscriptionArn != null) {
+            LOG.infov("Already Subscribed <{0}> ", notificationEndpoint);
+            return;
+        }
+        SubscribeResponse response = sns.subscribe(s -> s.topicArn(topicArn).protocol("https").endpoint(notificationEndpoint).returnSubscriptionArn(true));
+        subscriptionArn = response.subscriptionArn();
+        LOG.infov("Subscribed <{0}> : {1} ", notificationEndpoint, response.subscriptionArn());
+    }
+
+
+    public static void setSubscriptionArn(String subscriptionTopicArn) {
+        subscriptionArn = subscriptionTopicArn;
+    }
+
+    public static String getSubscriptionArn() {
+        return subscriptionArn;
+    }
+ */
     @PostMapping("/subscribeMobile")
     public String subscribeMobile(@RequestParam String mobileNumber, @RequestParam String topicArn) {
+
+
         SubscribeRequest request = SubscribeRequest.builder()
                 .topicArn(topicArn)
                 .protocol("sms")
                 .endpoint(mobileNumber)
                 .build();
 
-        snsClient.subscribe(request);
-        return "mobile number successfully subscribed.";
+        /**
+         * returns a SubscribeResponse object. You can get the subscription arn from this object.
+         */
+        SubscribeResponse response = snsClient.subscribe(request);
 
+        return "mobile number successfully subscribed. Your subscriptionArn is: " + response.subscriptionArn().toString();
     }
 
-
-//    @PostMapping("/publish")
-//    public String publishMessageToTopic() {
-//        PublishRequest publishRequest = PublishRequest.builder()
-//                .topicArn(arn)
-//                .message("You have received the first publication issued by the topic, since you subscribed.")
-//                .subject("First published notification")
-//                .build();
-//
-//        snsClient.publish(publishRequest);
-//        return "Your notification has been published.";
-//
-//    }
-//
-//    @PostMapping("/publish/sms/")
-//    public String publishSMSMessageToAll(@RequestParam(value = "topicArn") String topicArn, @RequestParam(value = "message") String message) {
-//
-//        try {
-//            PublishRequest request = PublishRequest.builder()
-//                    .message(message)
-//                    .topicArn(topicArn)
-//                    .messageAttributes(buildSMSAttributes(AWS_SNS_SMS_TYPE_VALUE)).build();
-//
-//            snsClient.publish(request);
-//
-//            return "Promotional message sent successfully.";
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return "Failed to send message.";
-//        }
-//    }
 
     @PostMapping("/publish/all")
     public String publishMessage(@RequestParam(value = "topicArn") String topicArn, @RequestParam(value = "message") String message) {

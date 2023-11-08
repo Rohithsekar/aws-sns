@@ -1,8 +1,7 @@
 aws:
-  accessKey: AKIAXD4H34A2FZCTJ4UR
-  secretKey: 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
+  credentialsProvider:
+    profileName: sns
   sns:
-    arn: arn:aws:sns:ap-south-1:489374343220:mychannel
     sms:
       type:
         value: Promotional
